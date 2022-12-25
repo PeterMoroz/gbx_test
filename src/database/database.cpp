@@ -7,8 +7,8 @@ Database::Database(const std::string& dbname,
         const std::string& username, 
         const std::string& password,
         const std::string& host, const std::string& port)
+    : _connection(PQsetdbLogin(host.c_str(), port.c_str(), NULL, NULL, dbname.c_str(), username.c_str(), password.c_str()), &PQfinish)
 {
-    _connection.reset(PQsetdbLogin(host.c_str(), port.c_str(), NULL, NULL, dbname.c_str(), username.c_str(), password.c_str()), &PQfinish);
 }
 
 bool Database::checkConnection()

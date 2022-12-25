@@ -21,5 +21,5 @@ public:
     virtual ~Database();
 
 protected:
-    std::shared_ptr<PGconn> _connection;
+    std::unique_ptr<PGconn, decltype(&PQfinish)> _connection;
 };
