@@ -7,8 +7,8 @@ TEST(DatabaseTest, AddUser)
 {
     try {
         UsersDatabase db("gbx", "postgres", "pguser", "127.0.0.1", "5432");
-        int userId = db.addUser("peter", "12345678");
-        ASSERT_EQ(userId, 1);
+        const int userId = db.addUser("peter", "12345678");
+        ASSERT_TRUE(userId != -1);
 
         ASSERT_TRUE(db.delUser(userId));
     } catch (const std::exception& ex) {
