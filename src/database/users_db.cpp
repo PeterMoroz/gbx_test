@@ -3,17 +3,11 @@
 #include <iostream>
 #include <sstream>
 
-UsersDatabase::UsersDatabase(const std::string& dbname, 
-        const std::string& username, 
-        const std::string& password,
-        const std::string& host, const std::string& port)
-    : Database(dbname, username, password, host, port)
-{
-    if (!checkConnection())
-    {
-        throw std::runtime_error("No conection to DB.");
-    }
+using namespace gbx;
 
+UsersDatabase::UsersDatabase(ConnectionPool& connectionPool)
+    : Database(connectionPool)
+{
     const char sql[] = "CREATE TABLE IF NOT EXISTS users( " \
                         "id SERIAL PRIMARY KEY," \
                         "name TEXT NOT NULL UNIQUE," \
@@ -26,6 +20,7 @@ UsersDatabase::UsersDatabase(const std::string& dbname,
         throw std::runtime_error("Create table failed.");
     }
 }
+
 
 int UsersDatabase::addUser(const std::string& username, const std::string& password)
 {
@@ -100,4 +95,17 @@ std::string UsersDatabase::getPassword(int userId)
 
     const std::string value(PQgetvalue(result.get(), 0, 0));
     return value;
+}
+
+bool UsersDatabase::changePassword(const std::string& username, const std::string& password)
+{
+    std::ostringstream oss;
+    oss << "UPDATE users SET pass ='" << password << "' WHERE name='" << username << "';";
+    std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), oss.str().c_str()), &PQclear);
+    if (PQresultStatus(result.get()) != PGRES_COMMAND_OK)
+    {
+        std::cerr << "UPDATE failed. " << PQresultErrorMessage(result.get()) << std::endl;
+        return false;
+    }    
+    return true;
 }

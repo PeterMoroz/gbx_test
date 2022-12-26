@@ -1,21 +1,37 @@
 #include <database.h>
 
+
 #include <iostream>
 
+using namespace gbx;
 
-Database::Database(const std::string& dbname, 
-        const std::string& username, 
-        const std::string& password,
-        const std::string& host, const std::string& port)
-    : _connection(PQsetdbLogin(host.c_str(), port.c_str(), NULL, NULL, dbname.c_str(), username.c_str(), password.c_str()), &PQfinish)
+Database::Database(ConnectionPool& connectionPool)
+    : _connectionPool(connectionPool)
 {
+    if (_connectionPool.availableConnections() == 0)
+    {
+        throw std::logic_error("No available connections.");
+    }
+
+    _connection = std::move(connectionPool.acquireConnection());
+
+    if (!checkConnection())
+    {
+        throw std::runtime_error("No connection to DB.");
+    }
 }
 
 bool Database::checkConnection()
 {
+    if (!_connection)
+    {
+        std::cerr << "Connection is not initialized." << std::endl;
+        return false;
+    }
+
     if (PQstatus(_connection.get()) != CONNECTION_OK)
     {
-        std::cerr << "Connection to DB failed: " << PQerrorMessage(_connection.get()) << std::endl;
+        std::cerr << "Connection lost: " << PQerrorMessage(_connection.get()) << std::endl;
         return false;
     }
     return true;
@@ -23,5 +39,9 @@ bool Database::checkConnection()
 
 Database::~Database()
 {
-
+    if (checkConnection())
+    {
+        // return to pool only valid connections
+        _connectionPool.releaseConnection(std::move(_connection));
+    }
 }

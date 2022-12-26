@@ -1,8 +1,10 @@
 #pragma once
 
-#include <string>
-#include <memory>
-#include <libpq-fe.h>
+#include <connection_pool.h>
+#include <connection.h>
+
+namespace gbx
+{
 
 class Database
 {
@@ -11,15 +13,16 @@ public:
     Database& operator=(const Database&) = delete;
 
 protected:
-    Database(const std::string& dbname, 
-        const std::string& username, 
-        const std::string& password,
-        const std::string& host, const std::string& port);
+    explicit Database(ConnectionPool& connectionPool);
     bool checkConnection();
 
 public:
     virtual ~Database();
 
 protected:
-    std::unique_ptr<PGconn, decltype(&PQfinish)> _connection;
+    ConnectionPool& _connectionPool;
+    connection_t _connection;
 };
+
+
+}
