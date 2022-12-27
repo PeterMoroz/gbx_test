@@ -48,6 +48,11 @@ int UsersDatabase::getUserId(const std::string& username)
     {
         std::ostringstream err_oss;
         err_oss << "SELECT FROM users failed. " << PQresultErrorMessage(result.get()) << std::endl;
+        throw std::runtime_error(err_oss.str().c_str());
+    }
+
+    if (PQntuples(result.get()) == 0 || PQnfields(result.get()) == 0)
+    {
         return -1;
     }
 
@@ -91,6 +96,11 @@ std::string UsersDatabase::getUsername(int userId)
         throw std::runtime_error(err_oss.str().c_str());
     }
 
+    if (PQntuples(result.get()) == 0 || PQnfields(result.get()) == 0)
+    {
+        return "";
+    }
+
     const std::string value(PQgetvalue(result.get(), 0, 0));
     return value;
 }
@@ -107,6 +117,11 @@ std::string UsersDatabase::getPassword(int userId)
         throw std::runtime_error(err_oss.str().c_str());
     }
 
+    if (PQntuples(result.get()) == 0 || PQnfields(result.get()) == 0)
+    {
+        return "";
+    }
+   
     const std::string value(PQgetvalue(result.get(), 0, 0));
     return value;
 }
