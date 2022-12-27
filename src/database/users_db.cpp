@@ -1,6 +1,5 @@
 #include <users_db.h>
 
-#include <iostream>
 #include <sstream>
 
 using namespace gbx;
@@ -16,13 +15,14 @@ UsersDatabase::UsersDatabase(ConnectionPool& connectionPool)
     std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), sql), &PQclear);
     if (PQresultStatus(result.get()) != PGRES_COMMAND_OK)
     {
-        std::cerr << "CREATE failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        throw std::runtime_error("Create table failed.");
+        std::ostringstream oss;
+        oss << "CREATE TABLE failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(oss.str().c_str());
     }
 }
 
 
-int UsersDatabase::addUser(const std::string& username, const std::string& password)
+void UsersDatabase::addUser(const std::string& username, const std::string& password)
 {
     std::ostringstream oss;
     oss << "INSERT INTO users(name, pass) VALUES('" << username << "', '" << password << "');";
@@ -30,14 +30,24 @@ int UsersDatabase::addUser(const std::string& username, const std::string& passw
 
     if (PQresultStatus(result.get()) != PGRES_COMMAND_OK)
     {
-        std::cerr << "INSERT failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        return -1;
+        std::ostringstream err_oss;
+        err_oss << "INSERT INTO users failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(err_oss.str().c_str());
     }
 
-    result.reset(PQexec(_connection.get(), "SELECT MAX(id) FROM users;"));
+
+}
+
+int UsersDatabase::getUserId(const std::string& username)
+{
+    std::ostringstream oss;
+    oss << "SELECT id FROM users WHERE name='" << username << "';";
+    std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), oss.str().c_str()), &PQclear);
+    
     if (PQresultStatus(result.get()) != PGRES_TUPLES_OK)
     {
-        std::cerr << "SELECT failed. " << PQresultErrorMessage(result.get()) << std::endl;
+        std::ostringstream err_oss;
+        err_oss << "SELECT FROM users failed. " << PQresultErrorMessage(result.get()) << std::endl;
         return -1;
     }
 
@@ -47,13 +57,15 @@ int UsersDatabase::addUser(const std::string& username, const std::string& passw
     try {
         userId = std::stoi(value);
     } catch (const std::exception& ex) {
-        std::cerr << "Exception: " << ex.what() << std::endl;
+        std::ostringstream err_oss;
+        err_oss << "Couldn't convert " << value << " to number. " << ex.what();
+        throw std::logic_error(err_oss.str().c_str());
     }
 
     return userId;
 }
 
-bool UsersDatabase::delUser(int userId)
+void UsersDatabase::delUser(int userId)
 {
     std::ostringstream oss;
     oss << "DELETE FROM users WHERE id=" << userId << ";";
@@ -61,10 +73,10 @@ bool UsersDatabase::delUser(int userId)
 
     if (PQresultStatus(result.get()) != PGRES_COMMAND_OK)
     {
-        std::cerr << "DELETE failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        return false;
+        std::ostringstream err_oss;
+        err_oss << "DELETE FROM users failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(err_oss.str().c_str());
     }
-    return true;
 }
 
 std::string UsersDatabase::getUsername(int userId)
@@ -74,8 +86,9 @@ std::string UsersDatabase::getUsername(int userId)
     std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), oss.str().c_str()), &PQclear);
     if (PQresultStatus(result.get()) != PGRES_TUPLES_OK)
     {
-        std::cerr << "SELECT failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        return "";
+        std::ostringstream err_oss;
+        err_oss << "SELECT FROM users failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(err_oss.str().c_str());
     }
 
     const std::string value(PQgetvalue(result.get(), 0, 0));
@@ -89,23 +102,24 @@ std::string UsersDatabase::getPassword(int userId)
     std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), oss.str().c_str()), &PQclear);
     if (PQresultStatus(result.get()) != PGRES_TUPLES_OK)
     {
-        std::cerr << "SELECT failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        return "";
+        std::ostringstream err_oss;
+        err_oss << "SELECT FROM users failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(err_oss.str().c_str());
     }
 
     const std::string value(PQgetvalue(result.get(), 0, 0));
     return value;
 }
 
-bool UsersDatabase::changePassword(const std::string& username, const std::string& password)
+void UsersDatabase::changePassword(const std::string& username, const std::string& password)
 {
     std::ostringstream oss;
     oss << "UPDATE users SET pass ='" << password << "' WHERE name='" << username << "';";
     std::unique_ptr<PGresult, decltype(&PQclear)> result(PQexec(_connection.get(), oss.str().c_str()), &PQclear);
     if (PQresultStatus(result.get()) != PGRES_COMMAND_OK)
     {
-        std::cerr << "UPDATE failed. " << PQresultErrorMessage(result.get()) << std::endl;
-        return false;
-    }    
-    return true;
+        std::ostringstream err_oss;
+        err_oss << "UPDATE failed. " << PQresultErrorMessage(result.get());
+        throw std::runtime_error(err_oss.str().c_str());
+    }
 }

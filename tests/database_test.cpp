@@ -28,9 +28,10 @@ TEST(DatabaseTest, AddUser)
         }
         
         UsersDatabase db(connectionPool);
-        const int userId = db.addUser("peter", "12345678");
-        ASSERT_TRUE(userId != -1);
-        ASSERT_TRUE(db.delUser(userId));
+        db.addUser("peter", "12345678");
+        const int userId = db.getUserId("peter");
+        ASSERT_TRUE(userId > 0);
+        db.delUser(userId);
     } catch (const std::exception& ex) {
         std::cerr << "Exception: " << ex.what() << std::endl;
         ASSERT_TRUE(false);
@@ -50,15 +51,16 @@ TEST(DatabaseTest, GetUsername)
         }
 
         UsersDatabase db(connectionPool);
-        const int userId = db.addUser("peter", "12345678");
-        ASSERT_TRUE(userId != -1);
+        db.addUser("peter", "12345678");
+        const int userId = db.getUserId("peter");
+        ASSERT_TRUE(userId > 0);        
         const std::string name(db.getUsername(userId));
         ASSERT_EQ(name, "peter");
-        ASSERT_TRUE(db.delUser(userId));
+        db.delUser(userId);
     } catch (const std::exception& ex) {
         std::cerr << "Exception: " << ex.what() << std::endl;
         ASSERT_TRUE(false);
-    }    
+    }
 }
 
 TEST(DatabaseTest, GetPassword)
@@ -74,11 +76,12 @@ TEST(DatabaseTest, GetPassword)
         }
 
         UsersDatabase db(connectionPool);
-        const int userId = db.addUser("peter", "12345678");
-        ASSERT_TRUE(userId != -1);
+        db.addUser("peter", "12345678");
+        const int userId = db.getUserId("peter");
+        ASSERT_TRUE(userId > 0);
         const std::string pass(db.getPassword(userId));
         ASSERT_EQ(pass, "12345678");
-        ASSERT_TRUE(db.delUser(userId));
+        db.delUser(userId);
     } catch (const std::exception& ex) {
         std::cerr << "Exception: " << ex.what() << std::endl;
         ASSERT_TRUE(false);
@@ -97,20 +100,21 @@ TEST(DatabaseTest, ChangePassword)
         }
 
         UsersDatabase db(connectionPool);
-        const int userId = db.addUser("peter", "12345678");
-        ASSERT_TRUE(userId != -1);
+        db.addUser("peter", "12345678");
+        const int userId = db.getUserId("peter");
+        ASSERT_TRUE(userId > 0);
         {
             const std::string pass(db.getPassword(userId));
             ASSERT_EQ(pass, "12345678");
         }
 
         {
-            ASSERT_TRUE(db.changePassword("peter", "1234567890"));
+            db.changePassword("peter", "1234567890");
             const std::string pass(db.getPassword(userId));
             ASSERT_EQ(pass, "1234567890");
         }
 
-        ASSERT_TRUE(db.delUser(userId));
+        db.delUser(userId);
     } catch (const std::exception& ex) {
         std::cerr << "Exception: " << ex.what() << std::endl;
         ASSERT_TRUE(false);

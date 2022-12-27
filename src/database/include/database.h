@@ -14,7 +14,7 @@ public:
 
 protected:
     explicit Database(ConnectionPool& connectionPool);
-    bool checkConnection();
+    void checkConnection();
 
 public:
     virtual ~Database();

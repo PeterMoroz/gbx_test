@@ -1,7 +1,6 @@
 #include <database.h>
 
-
-#include <iostream>
+#include <sstream>
 
 using namespace gbx;
 
@@ -15,31 +14,27 @@ Database::Database(ConnectionPool& connectionPool)
 
     _connection = std::move(connectionPool.acquireConnection());
 
-    if (!checkConnection())
-    {
-        throw std::runtime_error("No connection to DB.");
-    }
+    checkConnection();
 }
 
-bool Database::checkConnection()
+void Database::checkConnection()
 {
     if (!_connection)
     {
-        std::cerr << "Connection is not initialized." << std::endl;
-        return false;
+        throw std::logic_error("Connection is not initialized.");
     }
 
     if (PQstatus(_connection.get()) != CONNECTION_OK)
     {
-        std::cerr << "Connection lost: " << PQerrorMessage(_connection.get()) << std::endl;
-        return false;
+        std::ostringstream oss;
+        oss << "Connection lost: " << PQerrorMessage(_connection.get());
+        throw std::runtime_error(oss.str().c_str());
     }
-    return true;
 }
 
 Database::~Database()
 {
-    if (checkConnection())
+    if (_connection && PQstatus(_connection.get()) == CONNECTION_OK)
     {
         // return to pool only valid connections
         _connectionPool.releaseConnection(std::move(_connection));
