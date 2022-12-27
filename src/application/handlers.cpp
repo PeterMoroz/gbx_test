@@ -80,6 +80,7 @@ void PutRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& req, Poco::N
     app.logger().information("Requested URI: %s\tpath: %s", uri.toString(), uri.getPath());
     resp.setContentType("text/plain");
     std::ostream& os = resp.send();
+    
 
     const std::string path(uri.getPath());
     if (path.find("/api/users/") != std::string::npos)
@@ -100,14 +101,8 @@ void PutRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& req, Poco::N
                 else
                 {
                     UsersDatabase db(connectionPool);
-                    if (db.changePassword(username, password))
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-                    }
-                    else
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                    }
+                    db.changePassword(username, password);
+                    resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                 }                
             } catch (const std::exception& ex) {
                 app.logger().error("Exception: %s", std::string(ex.what()));
@@ -164,16 +159,8 @@ void DeleteRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& req, Poco
                 else
                 {
                     UsersDatabase db(connectionPool);
-
-                    if (db.delUser(userId))
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                        os << "Success.";
-                    }
-                    else
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-                    }
+                    db.delUser(userId);
+                    resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
                 }
             } catch (const std::exception& ex) {
                 app.logger().error("Exception: %s", std::string(ex.what()));
@@ -224,16 +211,10 @@ void PostRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& req, Poco::
                 else
                 {
                     UsersDatabase db(connectionPool);
-                    const int userId = db.addUser(username, password);
-                    if (userId < 0)
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-                    }
-                    else
-                    {
-                        resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-                        os << "userID: " << userId;
-                    }
+                    db.addUser(username, password);
+                    const int userId = db.getUserId(username);
+                    resp.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+                    os << "userID: " << userId;
                 }                
             } catch (const std::exception& ex) {
                 app.logger().error("Exception: %s", std::string(ex.what()));
