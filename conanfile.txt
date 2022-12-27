@@ -1,6 +1,7 @@
 [requires]
 gtest/1.11.0
 libpq/11.5
+poco/1.9.3
 
 [generators]
 cmake
