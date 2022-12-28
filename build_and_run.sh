@@ -10,3 +10,4 @@ conan install .. --build missing -s compiler=gcc -s compiler.version=10.2 -s com
 cmake ..
 cmake --build .
 CTEST_OUTPUT_ON_FAILURE=TRUE cmake --build . --target test
+./bin/gbx_main

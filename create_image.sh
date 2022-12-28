@@ -1,1 +1,1 @@
- docker build -t gbx_test:0.2 --build-arg CACHEBUST=$(date +%s) .
+ docker build -t gbx_test_image .

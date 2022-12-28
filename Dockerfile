@@ -1,7 +1,5 @@
 FROM debian:11
 
-ARG CACHEBUST=1
-
 RUN apt-get update && \
 	apt-get install -y \
 	build-essential \
